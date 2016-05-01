@@ -13,11 +13,11 @@ public class Test {
 		CrawlConfig config = new CrawlConfig();
 		
 		List<WebURL> seeds = new ArrayList<>();
-		seeds.add(new WebURL("https://www.zhihu.com/", null));
+		seeds.add(new WebURL("http://www.sina.com.cn/", null));
 		
 		CrawlController controller = new CrawlController("xzf", config);
 		controller.setSeeds(seeds);
-		controller.doLogin();
+		//controller.doLogin();
 		controller.start();
 	}
 }

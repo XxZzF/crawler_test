@@ -12,6 +12,7 @@ import test.xzf.fetcher.PageFetcher;
 import test.xzf.frontier.Frontier;
 import test.xzf.frontier.Visited;
 import test.xzf.login.ZhiHuLogin;
+import test.xzf.monitor.IdleConnectionMonitor;
 import test.xzf.page.WebURL;
 
 public class CrawlController {
@@ -26,6 +27,8 @@ public class CrawlController {
 	
 	private Visited visited = new Visited();
 	
+	private IdleConnectionMonitor connMonitor;
+	
 	private HttpClientContext httpContext;
 	
 	private int numberOfCrawlers;
@@ -37,7 +40,7 @@ public class CrawlController {
 		this.controllerName = controllerName;
 		this.crawlConfig = crawlConfig;
 		this.pageFetcher = new PageFetcher(crawlConfig);
-		
+		this.connMonitor = new IdleConnectionMonitor(this.pageFetcher.getCm());
 		this.numberOfCrawlers = crawlConfig.getNumberOfCrawlers();
 	}
 	
@@ -62,9 +65,14 @@ public class CrawlController {
 				thread = new Thread(new WebCrawler(frontier, visited, pageFetcher), controllerName + " Crawler" + i);
 			else
 				thread = new Thread(new WebCrawler(frontier, visited, pageFetcher, httpContext), controllerName + " Crawler" + i);
+			
 			thread.start();
 			crawlers.add(thread);
 		}
+		
+		Thread connMonitorThread;
+		connMonitorThread = new Thread(connMonitor, "connMonitorThread");
+		connMonitorThread.start();
 	}
 }
  

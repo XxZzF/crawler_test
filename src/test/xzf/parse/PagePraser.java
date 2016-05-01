@@ -1,10 +1,16 @@
 package test.xzf.parse;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,9 +20,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import test.xzf.page.Page;
-import test.xzf.page.WebURL;
 
 public class PagePraser {
+	private static Object mutex = new Object();
+	
 	public static void parsePage(Page page) {
 		makeFile(page);
 		ParseData parseData = new ParseData();
@@ -41,26 +48,62 @@ public class PagePraser {
 		parseData.setUrls(urls);
 	}
 	
-	public static void makeFile(Page page) {
-		FileOutputStream file = null;
+	public static void makeFile(final Page page) {
+		String fileName = null;
+		fileName = page.getPageUrl().getUrl().toString();
+		fileName = fileName.replaceAll("\\W?", "");
+		fileName = fileName + "_d=" + page.getPageUrl().getDepth();
+		
+		Path path = Paths.get("F:\\zhihu\\" + fileName + ".html");
+		
 		try {
-			String fileName = page.getPageUrl().getUrl().toString();
-			fileName = fileName.substring(0, fileName.length() - 1);
-			fileName = fileName.replaceAll("\\W?", "");
-			file = new FileOutputStream("F:\\zhihu\\" + fileName + ".html");
-			try {
-				file.write(page.getContentData());
-			} catch (IOException e) {
-				e.printStackTrace();
+			final AsynchronousFileChannel fc = AsynchronousFileChannel.open(path, StandardOpenOption.WRITE,
+					StandardOpenOption.CREATE);
+			ByteBuffer buffer = ByteBuffer.wrap(page.getContentData());
+			fc.write(buffer, 0, fileName, new CompletionHandler<Integer, String>() {
+				@Override
+				public void completed(Integer result, String attachment) {
+					try {
+						fc.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				@Override
+				public void failed(Throwable exc, String attachment) {
+					System.out.println("fail!! ---" + attachment);
+					exc.printStackTrace();
+				}
+			});
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} 
+		
+		
+		//把抓取到的网址写入文件
+		synchronized (mutex) {
+			File f = new File("F:\\website.txt");
+			if (!f.exists()) {
+				try {
+					f.createNewFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} finally {
+			
+			FileWriter fw = null;
 			try {
-				if (file != null)
-					file.close();
+				fw = new FileWriter(f, true);
+				fw.write(fileName + "\r\n");
 			} catch (IOException e) {
 				e.printStackTrace();
+			} finally {
+				try {
+					fw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
 			}
 		}
 	}

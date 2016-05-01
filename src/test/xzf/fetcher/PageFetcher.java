@@ -26,10 +26,16 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieOrigin;
+import org.apache.http.cookie.CookieSpec;
+import org.apache.http.cookie.CookieSpecProvider;
+import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.impl.cookie.BrowserCompatSpec;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
@@ -90,19 +96,40 @@ public class PageFetcher {
                 return false;
             }
 		};
-
+		
+		
+		//这里要定义一个cookie策略提供器 在httpclient上使用 防止cookie rejected
+		CookieSpecProvider easySpecProvider = new CookieSpecProvider() {  
+		    public CookieSpec create(HttpContext context) {  
+		        return new BrowserCompatSpec() {  
+		            @Override  
+		            public void validate(Cookie cookie, CookieOrigin origin)  
+		                    throws MalformedCookieException {  
+		            }  
+		        };  
+		    }  
+		};
+		
+		//这里要定义一个
+		Registry<CookieSpecProvider> reg = RegistryBuilder.<CookieSpecProvider>create()  
+		        .register("mySpec", easySpecProvider)  
+		        .build();  
+		
 		//设置cookie规范
 		RequestConfig globalConfig = RequestConfig.custom()  
-												  .setCookieSpec(CookieSpecs.STANDARD)
+												  .setCookieSpec("mySpec")
 												  .setConnectionRequestTimeout(config.getConnectionRequestTimeout())
 									              .setConnectTimeout(config.getConnectTimeout())
 									              .setSocketTimeout(config.getSocketTimeout())
 		        								  .build(); 
 		
+		//定制httpClient
 		HttpClientBuilder httpClientBuilder = HttpClients.custom();
 		httpClientBuilder.setConnectionManager(cm)
 						 .setRetryHandler(httpRequestRetryHandler)
+						 .setDefaultCookieSpecRegistry(reg)
 						 .setDefaultRequestConfig(globalConfig);
+		
 		httpClient = httpClientBuilder.build();
 	}
 	
@@ -126,7 +153,7 @@ public class PageFetcher {
 		} finally {
 			try {
 				if (httpResponse != null)
-				httpResponse.close();
+					httpResponse.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -180,9 +207,6 @@ public class PageFetcher {
 	}
 
 	
-	
-	
-	
 	public CloseableHttpClient getHttpClient() {
 		return httpClient;
 	}
@@ -191,5 +215,21 @@ public class PageFetcher {
 		this.httpClient = httpClient;
 	}
 
+	public HttpClientContext getHttpContext() {
+		return httpContext;
+	}
+
+	public void setHttpContext(HttpClientContext httpContext) {
+		this.httpContext = httpContext;
+	}
+
+	public PoolingHttpClientConnectionManager getCm() {
+		return cm;
+	}
+
+	public void setCm(PoolingHttpClientConnectionManager cm) {
+		this.cm = cm;
+	}
+	
 	
 }

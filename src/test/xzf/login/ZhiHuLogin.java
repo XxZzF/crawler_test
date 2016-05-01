@@ -51,7 +51,7 @@ public class ZhiHuLogin {
 	 */
 	public void get_Xsrf() {
 		
-		httpGet = new HttpGet("https://www.zhihu.com/");
+		httpGet = new HttpGet("https://www.zhihu.com/signin");
 		HttpClientUtil.config(httpGet);
 		
 		try {

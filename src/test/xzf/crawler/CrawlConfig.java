@@ -18,14 +18,14 @@ public class CrawlConfig {
 	private int maxTotal = 30;					//连接池最大连接数
 	private int defaultMaxPerRoute = 10;		//每个路由最大连接数
 	
-	/*-----------------------------------连接池配置-----------------------------------------*/
+	/*-----------------------------------连接配置-----------------------------------------*/
 	
 	private int connectionRequestTimeout = 30000;//连接请求超时
 	private int connectTimeout = 30000;			//连接超时
 	private int socketTimeout = 30000;			//socket超时
 	
 	/*-----------------------------------爬虫配置-----------------------------------------*/
-	private int numberOfCrawlers = 10;			//爬虫线程的数量
+	private int numberOfCrawlers = 12;			//爬虫线程的数量
 
 	
 	
